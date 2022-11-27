@@ -15,7 +15,14 @@ namespace DuplicateFilesScannerAndDelete
             if (args.Length > 0)
                 path = args[0] as string;
             else
-                path = @"C:\Madhus Photos\Camera";
+            {
+                //path = @"C:\Madhus Photos\Camera";
+                do
+                {
+                    cki = Console.ReadKey();
+                    //place for user input
+                } while (true);
+            }
 
             Console.WriteLine("Scanning in path(includes nested):" + path);
             //Get all files from given directory
@@ -203,7 +210,7 @@ namespace DuplicateFilesScannerAndDelete
                .Select(g => new { FileHash = g.Key, Files = g.Select(z => z.FileName).ToList() });
 
             //keeping first item of each group as is and identify rest as duplicate files to delete
-           
+
             ToDelete.AddRange(similarList.SelectMany(f => f.Files.Skip(1)).ToList());
             Console.WriteLine("Found duplicate files by hash:" + ToDelete.Count());
             return ToDelete;
