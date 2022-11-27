@@ -285,7 +285,10 @@ namespace DuplicateFilesScannerAndDelete
             try
             {
                 var exist = Directory.Exists(path);
-                Console.WriteLine("Valid choosen path is [" + path.ToUpper() + "]");
+                if (exist)
+                    Console.WriteLine("Valid Choosen path : \"" + path.ToUpper() + "\"");
+                else
+                    Console.WriteLine("Invalid path :\"" + path.ToUpper() + "\" \n Please provide proper path");
                 return exist;
             }
             catch (UnauthorizedAccessException)
