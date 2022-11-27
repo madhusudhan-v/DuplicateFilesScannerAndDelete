@@ -41,7 +41,7 @@ namespace DuplicateFilesScannerAndDelete
                     }
                 }
             }
-            Console.WriteLine("Total time consumed(1):" + (DateTime.Now - startTime).TotalMilliseconds);
+            Console.WriteLine("Total time consumed(in milliseconds):" + (DateTime.Now - startTime).TotalMilliseconds);
 
 
             /*
