@@ -1,6 +1,4 @@
 ﻿using System.Security.Cryptography;
-using System;
-using System.Threading;
 
 namespace DuplicateFilesScannerAndDelete
 {
@@ -8,7 +6,7 @@ namespace DuplicateFilesScannerAndDelete
     {
         static void Main(string[] args)
         {
-            string path;
+            string path = "";
             ConsoleKeyInfo cki;
             double totalSize = 0;
             //pass directory path as argument to command line
@@ -17,11 +15,12 @@ namespace DuplicateFilesScannerAndDelete
             else
             {
                 //path = @"C:\Madhus Photos\Camera";
+                Console.WriteLine("Please provide valid files path(folder path) and then enter eg:C:\\Madhus Photos\\1Captured\\camera1 videos");
                 do
                 {
-                    cki = Console.ReadKey();
+                    path = Console.ReadLine() ?? "";
                     //place for user input   
-                } while (true);
+                } while (!DirectoryAccessible(path));
             }
 
             Console.WriteLine("Scanning in path(includes nested):" + path);
@@ -29,7 +28,7 @@ namespace DuplicateFilesScannerAndDelete
             var fileLists = Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories).OrderBy(p => p).ToList();
             fileLists.Sort();
             List<string> ToDelete = new List<string>();
-            Console.WriteLine("totalFiles found:" + fileLists.Count() + "\n");
+            Console.WriteLine("Total Files found in directory are(includes nested):" + fileLists.Count() + "\n");
 
             Console.WriteLine("Choose Mode type");
             Console.WriteLine("S:Slow mode all files compare by hash (More perfect)");
@@ -238,7 +237,7 @@ namespace DuplicateFilesScannerAndDelete
                 }
             }
             Console.WriteLine("Total time consumed(in milliseconds):" + (DateTime.Now - startTime).TotalMilliseconds);
-            /*
+            /* //Using file length is not accurate, its leads wrong... not perfect
            startTime = DateTime.Now;
            List<FileDetails> finalDetails2 = new List<FileDetails>();
            foreach (var item in fileLists)
@@ -281,6 +280,25 @@ namespace DuplicateFilesScannerAndDelete
                 }
             }
         }
+        public static bool DirectoryAccessible(string path)
+        {
+            try
+            {
+                var exist = Directory.Exists(path);
+                Console.WriteLine("Valid choosen path is [" + path.ToUpper() + "]");
+                return exist;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Console.WriteLine("You dont have permission to access this path");
+                return false;
+            }
+            catch
+            {
+                Console.WriteLine("Invalid path");
+                return false;
+            }
+        }
     }
     public class FileDetails
     {
@@ -293,6 +311,7 @@ namespace DuplicateFilesScannerAndDelete
         {
             FileName = fileName;
             Length = length;
+            FileHash = string.Empty;
         }
         public string FileName { get; set; }
         public string FileHash { get; set; }
