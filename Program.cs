@@ -7,6 +7,7 @@ namespace DuplicateFilesScannerAndDelete
         static void Main(string[] args)
         {
             string path = "";
+           
             ConsoleKeyInfo cki;
             double totalSize = 0;
             //pass directory path as argument to command line
@@ -22,11 +23,12 @@ namespace DuplicateFilesScannerAndDelete
                     //place for user input   
                 } while (!DirectoryAccessible(path));
             }
-
+            var logResultFile = Path.Combine(path, "DuplicateFilesScannerAndDelete.txt");
             Console.WriteLine("Scanning in path(includes nested):" + path);
             //Get all files from given directory
             var fileLists = Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories).OrderBy(p => p).ToList();
             fileLists.Sort();
+            fileLists.Remove(logResultFile);
             List<string> ToDelete = new List<string>();
             Console.WriteLine("Total Files found in directory are(includes nested):" + fileLists.Count() + "\n");
 
@@ -112,11 +114,24 @@ namespace DuplicateFilesScannerAndDelete
                     Console.WriteLine(" --- You pressed {0}\n", cki.Key.ToString());
                     if (cki.Key == ConsoleKey.C)
                     {
-                        Console.WriteLine("Deleting files...");
-                        ToDelete.ForEach(File.Delete);
-                        Console.WriteLine("Files are deleted successfully");
+                        using (StreamWriter sw = File.Exists(logResultFile) ? File.AppendText(logResultFile) : new StreamWriter(logResultFile))
+                        {
+                            sw.WriteLineAsync("\n");
+                            var startTime = DateTime.Now;
+                            sw.WriteLineAsync("Execution on " + DateTime.Now);
+                            Console.WriteLine("Deleting files...");
+                            sw.WriteLineAsync("Deleting files...");
+                            ToDelete.ForEach(x =>
+                            {
+                                File.Delete(x);
+                                sw.WriteLineAsync(x);
+                            });
+                            Console.WriteLine($"{ToDelete.Count()} Files deleted successfully({(DateTime.Now - startTime).TotalMilliseconds} milliseconds) at:" + DateTime.Now);
+                            sw.WriteLineAsync($"{ToDelete.Count()} Files deleted successfully({(DateTime.Now - startTime).TotalMilliseconds} milliseconds) at:" + DateTime.Now);
+                            sw.Close();
+                            Console.WriteLine("Press escape to proceed next");
+                        }
                     }
-                    Console.WriteLine("Press the Escape (Esc) key to quit: \n");
                 } while (cki.Key != ConsoleKey.Escape);
                 //CleanEmptyFolders(path);
             }
