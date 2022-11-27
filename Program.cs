@@ -15,14 +15,13 @@ namespace DuplicateFilesScannerAndDelete
             if (args.Length > 0)
                 path = args[0] as string;
             else
-                path = @"C:\Madhus Photos";
+                path = @"C:\Madhus Photos\Camera";
 
             Console.WriteLine("Scanning in path(includes nested):" + path);
             //Get all files from given directory
             var fileLists = Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories).OrderBy(p => p).ToList();
             //var fileLists = Directory.GetFileSystemEntries(path);
-            int totalFiles = fileLists.Count();
-            Console.WriteLine("totalFiles found:" + totalFiles);
+            Console.WriteLine("totalFiles found:" + fileLists.Count());
             List<FileDetails> finalDetails = new List<FileDetails>();
             List<string> ToDelete = new List<string>();
             finalDetails.Clear();
@@ -38,11 +37,7 @@ namespace DuplicateFilesScannerAndDelete
                     progress.Report((double)fileLists.IndexOf(item) / fileLists.Count());
                     using (var fs = new FileStream(item, FileMode.Open, FileAccess.Read))
                     {
-                        finalDetails.Add(new FileDetails()
-                        {
-                            FileName = item,
-                            FileHash = BitConverter.ToString(SHA1.Create().ComputeHash(fs)),
-                        });
+                        finalDetails.Add(new FileDetails(item, BitConverter.ToString(SHA1.Create().ComputeHash(fs))));
                     }
                 }
             }
@@ -149,8 +144,14 @@ namespace DuplicateFilesScannerAndDelete
     }
     public class FileDetails
     {
+        public FileDetails(string fileName, string fileHash)
+        {
+            FileName = fileName;
+            FileHash = fileHash;
+        }
+
         public string FileName { get; set; }
         public string FileHash { get; set; }
-        public int Length { get; set; }
+        //public int Length { get; set; }
     }
 }
