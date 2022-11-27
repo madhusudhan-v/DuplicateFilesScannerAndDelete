@@ -20,7 +20,7 @@ namespace DuplicateFilesScannerAndDelete
                 do
                 {
                     cki = Console.ReadKey();
-                    //place for user input
+                    //place for user input   
                 } while (true);
             }
 
