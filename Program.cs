@@ -7,7 +7,7 @@ namespace DuplicateFilesScannerAndDelete
         static void Main(string[] args)
         {
             string path = "";
-           
+
             ConsoleKeyInfo cki;
             double totalSize = 0;
             //pass directory path as argument to command line
@@ -24,15 +24,21 @@ namespace DuplicateFilesScannerAndDelete
                 } while (!DirectoryAccessible(path));
             }
             var logResultFile = Path.Combine(path, "DuplicateFilesScannerAndDelete.txt");
-            Console.WriteLine("Scanning in path(includes nested):" + path);
+            Console.WriteLine("Scanning in path(includes nested):" );
             //Get all files from given directory
             var fileLists = Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories).OrderBy(p => p).ToList();
             fileLists.Sort();
             fileLists.Remove(logResultFile);
-            List<string> ToDelete = new List<string>();
-            Console.WriteLine("Total Files found in directory are(includes nested):" + fileLists.Count() + "\n");
 
-            Console.WriteLine("Choose Mode type");
+            Console.WriteLine("\n Total Files found in directory are(includes nested):" + fileLists.Count());
+            var typesGroup = fileLists.GroupBy(x => x.Substring(x.LastIndexOf(".")));
+            foreach (var t in typesGroup)
+            {
+                Console.WriteLine(t.Count() + " " + t.Key + " file(s)");
+            }
+
+            List<string> ToDelete = new List<string>();
+            Console.WriteLine("\nChoose Mode type to scan and deletion");
             Console.WriteLine("S:Slow mode all files compare by hash (More perfect)");
             Console.WriteLine("F:Fast mode 2 step activity(1:Scan all files by size then 2:Then for same size files hash comparison)");
             Console.WriteLine("B:Both process and select based on result(Very slow because both process had to complete)");
