@@ -15,17 +15,18 @@ namespace DuplicateFilesScannerAndDelete
             else
                 path = @"C:\Users\Madhusudhan\Downloads\Test1";
 
-            Console.WriteLine("Scanning in path(includes nested):"+path);
+            Console.WriteLine("Scanning in path(includes nested):" + path);
             //Get all files from given directory
             var fileLists = Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories).OrderBy(p => p).ToList();
             //var fileLists = Directory.GetFileSystemEntries(path);
             int totalFiles = fileLists.Count();
-            Console.WriteLine("totalFiles found:"+totalFiles);
+            Console.WriteLine("totalFiles found:" + totalFiles);
             List<FileDetails> finalDetails = new List<FileDetails>();
             List<string> ToDelete = new List<string>();
             finalDetails.Clear();
 
             Console.WriteLine("Calculating hash of each files and generating the list for comparison");
+            var startTime = DateTime.Now;
             //loop through all the files by file hash code
             foreach (var item in fileLists)
             {
@@ -38,10 +39,35 @@ namespace DuplicateFilesScannerAndDelete
                     });
                 }
             }
+            Console.WriteLine("Total time consumed(1):" + (DateTime.Now - startTime).TotalMilliseconds);
+
+
+            /*
+            startTime = DateTime.Now;
+            List<FileDetails> finalDetails2 = new List<FileDetails>();
+            foreach (var item in fileLists)
+            {
+                using (var fs = new FileStream(item, FileMode.Open, FileAccess.Read))
+                {
+                    finalDetails2.Add(new FileDetails()
+                    {
+                        FileName = item,
+                        Length = item.Length,
+                    });
+                }
+            }
+            Console.WriteLine("Total time consumed(2):" + (DateTime.Now - startTime).TotalMilliseconds);
+            var similarList2 = finalDetails2.GroupBy(f => f.Length)
+                .Select(g => new { FileHash = g.Key, Files = g.Select(z => z.FileName).ToList() });
+            List<string> ToDelete2 = new List<string>();
+            ToDelete2.AddRange(similarList2.SelectMany(f => f.Files.Skip(1)).ToList());
+            Console.WriteLine("Total duplicate files(2) - {0}", ToDelete2.Count);
+            //Using file length is not accurate, its leads wrong... not perfect
+            */
+
             //group by file hash code
             var similarList = finalDetails.GroupBy(f => f.FileHash)
                 .Select(g => new { FileHash = g.Key, Files = g.Select(z => z.FileName).ToList() });
-
 
             //keeping first item of each group as is and identify rest as duplicate files to delete
             ToDelete.AddRange(similarList.SelectMany(f => f.Files.Skip(1)).ToList());
@@ -77,11 +103,40 @@ namespace DuplicateFilesScannerAndDelete
                     }
                     Console.WriteLine("Press the Escape (Esc) key to quit: \n");
                 } while (cki.Key != ConsoleKey.Escape);
+                //CleanEmptyFolders(path);
             }
             else
             {
                 Console.WriteLine("No files to delete");
-                Console.ReadLine();
+                
+            }
+
+            Console.WriteLine("Press D to clean empty folders");
+            Console.WriteLine("Press the Escape (Esc) key to quit: \n");
+            do
+            {
+                cki = Console.ReadKey();
+                Console.WriteLine(" --- You pressed {0}\n", cki.Key.ToString());
+                if (cki.Key == ConsoleKey.D)
+                {
+                    Console.WriteLine("Cleaning empty subdirectories");
+                    CleanEmptyFolders(path);
+                    Console.WriteLine("Empty folders deleted successfully");
+                }
+                Console.WriteLine("Press the Escape (Esc) key to quit: \n");
+            } while (cki.Key != ConsoleKey.Escape);
+            Console.ReadLine();
+        }
+        private static void CleanEmptyFolders(string startLocation)
+        {
+            foreach (var directory in Directory.GetDirectories(startLocation))
+            {
+                CleanEmptyFolders(directory);
+                if (Directory.GetFiles(directory).Length == 0 &&
+                    Directory.GetDirectories(directory).Length == 0)
+                {
+                    Directory.Delete(directory, false);
+                }
             }
         }
     }
@@ -89,5 +144,6 @@ namespace DuplicateFilesScannerAndDelete
     {
         public string FileName { get; set; }
         public string FileHash { get; set; }
+        public int Length { get; set; }
     }
 }
