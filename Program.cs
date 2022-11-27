@@ -1,4 +1,6 @@
 ﻿using System.Security.Cryptography;
+using System;
+using System.Threading;
 
 namespace DuplicateFilesScannerAndDelete
 {
@@ -13,7 +15,7 @@ namespace DuplicateFilesScannerAndDelete
             if (args.Length > 0)
                 path = args[0] as string;
             else
-                path = @"C:\Users\Madhusudhan\Downloads\Test1";
+                path = @"C:\Madhus Photos";
 
             Console.WriteLine("Scanning in path(includes nested):" + path);
             //Get all files from given directory
@@ -26,17 +28,22 @@ namespace DuplicateFilesScannerAndDelete
             finalDetails.Clear();
 
             Console.WriteLine("Calculating hash of each files and generating the list for comparison");
+
             var startTime = DateTime.Now;
             //loop through all the files by file hash code
-            foreach (var item in fileLists)
+            using (var progress = new ProgressBar())
             {
-                using (var fs = new FileStream(item, FileMode.Open, FileAccess.Read))
+                foreach (var item in fileLists)
                 {
-                    finalDetails.Add(new FileDetails()
+                    progress.Report((double)fileLists.IndexOf(item) / fileLists.Count());
+                    using (var fs = new FileStream(item, FileMode.Open, FileAccess.Read))
                     {
-                        FileName = item,
-                        FileHash = BitConverter.ToString(SHA1.Create().ComputeHash(fs)),
-                    });
+                        finalDetails.Add(new FileDetails()
+                        {
+                            FileName = item,
+                            FileHash = BitConverter.ToString(SHA1.Create().ComputeHash(fs)),
+                        });
+                    }
                 }
             }
             Console.WriteLine("Total time consumed(1):" + (DateTime.Now - startTime).TotalMilliseconds);
