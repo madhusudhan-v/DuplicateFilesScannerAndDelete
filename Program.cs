@@ -24,7 +24,7 @@ namespace DuplicateFilesScannerAndDelete
                 } while (!DirectoryAccessible(path));
             }
             var logResultFile = Path.Combine(path, "DuplicateFilesScannerAndDelete.txt");
-            Console.WriteLine("Scanning in path(includes nested):" );
+            Console.WriteLine("Scanning in path(includes nested):");
             //Get all files from given directory
             var fileLists = Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories).OrderBy(p => p).ToList();
             fileLists.Sort();
@@ -227,12 +227,21 @@ namespace DuplicateFilesScannerAndDelete
             Console.WriteLine("Total time consumed(in milliseconds) Reading by Hash (2nd level scanning):" + (DateTime.Now - startTime).TotalMilliseconds);
 
             var similarList = f1.GroupBy(f => f.FileHash)
-               .Select(g => new { FileHash = g.Key, Files = g.Select(z => z.FileName).ToList() });
-
+               .Select(g => new { FileHash = g.Key, Files = g.Select(z => z.FileName).ToList() }).ToList();
             //keeping first item of each group as is and identify rest as duplicate files to delete
-
             ToDelete.AddRange(similarList.SelectMany(f => f.Files.Skip(1)).ToList());
             Console.WriteLine("Found duplicate files by hash:" + ToDelete.Count());
+
+            List<DuplicateFilesCompareFolders> existing = new List<DuplicateFilesCompareFolders>();
+            similarList.ForEach(f =>
+            {
+                for (int i = 1; i < f.Files.Count(); i++)
+                {
+                    DuplicateFilesCompareFolders.AddOrUpdateCounter(existing, f.Files[0].Substring(0, f.Files[0].LastIndexOf("\\")), f.Files[i].Substring(0, f.Files[i].LastIndexOf("\\")));
+                }
+            });
+            existing.ForEach(x => { Console.WriteLine(x.Folder1 + "=>" + x.Folder2 + "---" + x.CommonCount); });
+
             return ToDelete;
         }
         private static List<string> CompareSlowlyAllByHashValues(List<string> fileLists)
@@ -281,12 +290,23 @@ namespace DuplicateFilesScannerAndDelete
            //Using file length is not accurate, its leads wrong... not perfect
            */
             var similarList = finalDetails.GroupBy(f => f.FileHash)
-              .Select(g => new { FileHash = g.Key, Files = g.Select(z => z.FileName).ToList() });
+              .Select(g => new { FileHash = g.Key, Files = g.Select(z => z.FileName).ToList() }).ToList();
 
             List<string> ToDelete = new List<string>();
             //keeping first item of each group as is and identify rest as duplicate files to delete
             ToDelete.AddRange(similarList.SelectMany(f => f.Files.Skip(1)).ToList());
             Console.WriteLine("Found duplicate files by hash:" + ToDelete.Count());
+
+            List<DuplicateFilesCompareFolders> existing = new List<DuplicateFilesCompareFolders>();
+            similarList.ForEach(f =>
+            {
+                for (int i = 1; i < f.Files.Count(); i++)
+                {
+                    DuplicateFilesCompareFolders.AddOrUpdateCounter(existing, f.Files[0].Substring(0, f.Files[0].LastIndexOf("\\")), f.Files[i].Substring(0, f.Files[i].LastIndexOf("\\")));
+                }
+            });
+            existing.ForEach(x => { Console.WriteLine(x.Folder1 + "=>" + x.Folder2 + "---" + x.CommonCount); });
+
             return ToDelete;
         }
         private static void CleanEmptyFolders(string startLocation)
@@ -324,6 +344,26 @@ namespace DuplicateFilesScannerAndDelete
             }
         }
     }
+    public class DuplicateFilesCompareFolders
+    {
+        public DuplicateFilesCompareFolders(string folder1, string folder2)
+        {
+            Folder1 = folder1;
+            Folder2 = folder2;
+        }
+        public static List<DuplicateFilesCompareFolders> AddOrUpdateCounter(List<DuplicateFilesCompareFolders> existing, string folder1 = "", string folder2 = "")
+        {
+            if (existing.Any(x => x.Folder1 == folder1 && x.Folder2 == folder2))
+                existing.Find(x => x.Folder1 == folder1 && x.Folder2 == folder2).CommonCount++;
+            else if (existing.Any(x => x.Folder1 == folder2 && x.Folder2 == folder1))
+                existing.Find(x => x.Folder1 == folder2 && x.Folder2 == folder1).CommonCount++;
+            else existing.Add(new DuplicateFilesCompareFolders(folder1, folder2));
+            return existing;
+        }
+        public string Folder1 { get; set; }
+        public string Folder2 { get; set; }
+        public int CommonCount { get; set; } = 1;
+    }
     public class FileDetails
     {
         public FileDetails(string fileName, string fileHash)
@@ -331,6 +371,12 @@ namespace DuplicateFilesScannerAndDelete
             FileName = fileName;
             FileHash = fileHash;
         }
+        //public FileDetails(string fileName, long length,string fileHash)
+        //{
+        //    FileName = fileName;
+        //    Length = length;
+        //    FileHash = fileHash;
+        //}
         public FileDetails(string fileName, long length)
         {
             FileName = fileName;
